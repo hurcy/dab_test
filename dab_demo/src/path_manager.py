@@ -13,7 +13,7 @@ class PathResolver:
         """
         if not cls._instance:
             cls._instance = super().__new__(cls)
-            cls._root = Path(__file__).parent.parent.parent
+            cls._root = Path(__file__).parent.parent
         return cls._instance
 
     @property
