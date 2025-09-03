@@ -1,0 +1,14 @@
+# The main job for dab_demo.
+resources:
+  jobs:
+    dab_demo_job:
+      name: dab_demo_job
+
+      tasks:
+        - task_key: notebook_task
+          notebook_task:
+            notebook_path: ../src/demo.ipynb
+            source: WORKSPACE
+        
+      queue:
+        enabled: true
