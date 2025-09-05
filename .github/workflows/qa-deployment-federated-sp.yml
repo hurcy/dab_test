@@ -1,0 +1,37 @@
+name: GitHub Actions Demo (Workload identity federation)
+run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
+on: workflow_dispatch
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: 'Update git folder'
+    environment: prod
+    env:
+      DATABRICKS_AUTH_TYPE: github-oidc
+      DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+      DATABRICKS_CLIENT_ID: ${{ secrets.DATABRICKS_CLIENT_ID }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Databricks CLI
+        uses: databricks/setup-cli@main
+
+      # - name: Test Databricks authentication
+      #   run: databricks current-user me
+
+      - name: Debug - List existing repos
+        run: databricks repos list
+
+      - name: Debug - Check workspace path
+        run: databricks workspace list /Workspace/Users/${{ secrets.DATABRICKS_CLIENT_ID }} || echo "Path not accessible"
+
+      - name: Update git folder
+        # Set your workspace path and branch name here
+        run: databricks repos update /Workspace/Users/${{ secrets.DATABRICKS_CLIENT_ID }}/test_cicd_01 --branch main
