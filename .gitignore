@@ -9,3 +9,4 @@ scratch/**
 .vscode/
 .pytest_cache/
 .DS_Store
+.databricks
