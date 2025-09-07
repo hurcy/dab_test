@@ -5,6 +5,9 @@ import pyspark.sql.functions as F
 from pyspark.sql import DataFrame, Column
 
 
+def remove_non_word_characters(col):
+    return F.regexp_replace(col, "[^\\w\\s]+", "")
+
 def columns_except(df: DataFrame, ex: Optional[List[str]] = None, as_column: bool = False) -> List[Union[str, Column]]:
     """
     Returns a new list of columns without specified columns

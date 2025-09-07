@@ -1,0 +1,223 @@
+from __future__ import annotations
+
+import pyspark.sql.functions as F
+import pytest
+from pyspark.sql import SparkSession
+
+from pyspark.sql.types import ArrayType, DoubleType, IntegerType, StringType, StructField, StructType
+
+from chispa import (
+    ColumnsNotEqualError,
+    DataFramesNotEqualError,
+    assert_approx_column_equality,
+    assert_approx_df_equality,
+    assert_basic_rows_equality,
+    assert_column_equality,
+    assert_df_equality,
+)
+from chispa.schema_comparer import SchemasNotEqualError
+
+from session_manager import get_spark
+
+@pytest.fixture(scope="session")
+def spark() -> SparkSession:
+    return get_spark()
+
+def remove_non_word_characters(col):
+    return F.regexp_replace(col, "[^\\w\\s]+", "")
+
+
+def describe_column_equality():
+    def test_removes_non_word_characters_short(spark):
+        data = [
+            ("jo&&se", "jose"),
+            ("**li**", "li"),
+            ("#::luisa", "luisa"),
+            (None, None),
+        ]
+        df = spark.createDataFrame(data, ["name", "expected_name"]).withColumn(
+            "clean_name", remove_non_word_characters(F.col("name"))
+        )
+        assert_column_equality(df, "clean_name", "expected_name")
+
+    def test_remove_non_word_characters_nice_error(spark):
+        data = [
+            ("matt7", "matt"),
+            ("bill&", "bill"),
+            ("isabela*", "isabela"),
+            (None, None),
+        ]
+        df = spark.createDataFrame(data, ["name", "expected_name"]).withColumn(
+            "clean_name", remove_non_word_characters(F.col("name"))
+        )
+        # assert_column_equality(df, "clean_name", "expected_name")
+        with pytest.raises(ColumnsNotEqualError):
+            assert_column_equality(df, "clean_name", "expected_name")
+
+
+def describe_dataframe_equality():
+    def test_remove_non_word_characters_long(spark):
+        source_data = [("jo&&se",), ("**li**",), ("#::luisa",), (None,)]
+        source_df = spark.createDataFrame(source_data, ["name"])
+        actual_df = source_df.withColumn("clean_name", remove_non_word_characters(F.col("name")))
+        expected_data = [
+            ("jo&&se", "jose"),
+            ("**li**", "li"),
+            ("#::luisa", "luisa"),
+            (None, None),
+        ]
+        expected_df = spark.createDataFrame(expected_data, ["name", "clean_name"])
+        assert_df_equality(actual_df, expected_df)
+
+    def test_remove_non_word_characters_long_error(spark):
+        source_data = [("matt7",), ("bill&",), ("isabela*",), (None,)]
+        source_df = spark.createDataFrame(source_data, ["name"])
+        actual_df = source_df.withColumn("clean_name", remove_non_word_characters(F.col("name")))
+        expected_data = [
+            ("matt7", "matt"),
+            ("bill&", "bill"),
+            ("isabela*", "isabela"),
+            (None, None),
+        ]
+        expected_df = spark.createDataFrame(expected_data, ["name", "clean_name"])
+        # assert_df_equality(actual_df, expected_df)
+        with pytest.raises(DataFramesNotEqualError):
+            assert_df_equality(actual_df, expected_df)
+
+    def ignore_row_order(spark):
+        df1 = spark.createDataFrame([(1,), (2,), (3,)], ["some_num"])
+        df2 = spark.createDataFrame([(2,), (1,), (3,)], ["some_num"])
+        # assert_df_equality(df1, df2)
+        assert_df_equality(df1, df2, ignore_row_order=True)
+
+    def ignore_column_order(spark):
+        df1 = spark.createDataFrame([(1, 7), (2, 8), (3, 9)], ["num1", "num2"])
+        df2 = spark.createDataFrame([(7, 1), (8, 2), (9, 3)], ["num2", "num1"])
+        assert_df_equality(df1, df2, ignore_column_order=True)
+
+    def ignore_nullable_property(spark):
+        s1 = StructType([
+            StructField("name", StringType(), True),
+            StructField("age", IntegerType(), True),
+        ])
+        df1 = spark.createDataFrame([("juan", 7), ("bruna", 8)], s1)
+        s2 = StructType([
+            StructField("name", StringType(), True),
+            StructField("age", IntegerType(), False),
+        ])
+        df2 = spark.createDataFrame([("juan", 7), ("bruna", 8)], s2)
+        assert_df_equality(df1, df2, ignore_nullable=True)
+
+    def ignore_nullable_property_array(spark):
+        s1 = StructType([
+            StructField("name", StringType(), True),
+            StructField("coords", ArrayType(DoubleType(), True), True),
+        ])
+        df1 = spark.createDataFrame([("juan", [1.42, 3.5]), ("bruna", [2.76, 3.2])], s1)
+        s2 = StructType([
+            StructField("name", StringType(), True),
+            StructField("coords", ArrayType(DoubleType(), False), True),
+        ])
+        df2 = spark.createDataFrame([("juan", [1.42, 3.5]), ("bruna", [2.76, 3.2])], s2)
+        assert_df_equality(df1, df2, ignore_nullable=True)
+
+    def consider_nan_values_equal(spark):
+        data1 = [(float("nan"), "jose"), (2.0, "li")]
+        df1 = spark.createDataFrame(data1, ["num", "name"])
+        data2 = [(float("nan"), "jose"), (2.0, "li")]
+        df2 = spark.createDataFrame(data2, ["num", "name"])
+        assert_df_equality(df1, df2, allow_nan_equality=True)
+
+    def it_prints_underline_message(spark):
+        data = [
+            (None, None),
+            ("jose", 42),
+            ("li", 99),
+            ("rick", 28),
+            ("funny", 33),
+        ]
+        df1 = spark.createDataFrame(data, ["firstname", "age"])
+        data = [
+            (None, None),
+            ("lou", 42),
+            ("li", 99),
+            ("rick", 66),
+        ]
+        df2 = spark.createDataFrame(data, ["firstname", "age"])
+        with pytest.raises(DataFramesNotEqualError):
+            assert_df_equality(df1, df2, underline_cells=True)
+
+    def it_shows_assert_basic_rows_equality(my_formats, spark):
+        data = [
+            (None, None),
+            ("jose", 42),
+            ("li", 99),
+            ("rick", 28),
+            ("funny", 33),
+        ]
+        df1 = spark.createDataFrame(data, ["firstname", "age"])
+        data = [
+            (None, None),
+            ("lou", 42),
+            ("li", 99),
+            ("rick", 66),
+        ]
+        df2 = spark.createDataFrame(data, ["firstname", "age"])
+        # assert_basic_rows_equality(df1.collect(), df2.collect(), formats=my_formats)
+        with pytest.raises(DataFramesNotEqualError):
+            assert_basic_rows_equality(df1.collect(), df2.collect(), underline_cells=True)
+
+
+def describe_assert_approx_column_equality():
+    def test_approx_col_equality_same(spark):
+        data = [(1.1, 1.1), (2.2, 2.15), (3.3, 3.37), (None, None)]
+        df = spark.createDataFrame(data, ["num1", "num2"])
+        assert_approx_column_equality(df, "num1", "num2", 0.1)
+
+    def test_approx_col_equality_different(spark):
+        data = [(1.1, 1.1), (2.2, 2.15), (3.3, 5.0), (None, None)]
+        df = spark.createDataFrame(data, ["num1", "num2"])
+        with pytest.raises(ColumnsNotEqualError):
+            assert_approx_column_equality(df, "num1", "num2", 0.1)
+
+    def test_approx_df_equality_same(spark):
+        data1 = [(1.1, "a"), (2.2, "b"), (3.3, "c"), (None, None)]
+        df1 = spark.createDataFrame(data1, ["num", "letter"])
+        data2 = [(1.05, "a"), (2.13, "b"), (3.3, "c"), (None, None)]
+        df2 = spark.createDataFrame(data2, ["num", "letter"])
+        assert_approx_df_equality(df1, df2, 0.1)
+
+    def test_approx_df_equality_different(spark):
+        data1 = [(1.1, "a"), (2.2, "b"), (3.3, "c"), (None, None)]
+        df1 = spark.createDataFrame(data1, ["num", "letter"])
+        data2 = [(1.1, "a"), (5.0, "b"), (3.3, "z"), (None, None)]
+        df2 = spark.createDataFrame(data2, ["num", "letter"])
+        # assert_approx_df_equality(df1, df2, 0.1)
+        with pytest.raises(DataFramesNotEqualError):
+            assert_approx_df_equality(df1, df2, 0.1)
+
+
+def describe_schema_mismatch_messages():
+    def test_schema_mismatch_message(spark):
+        data1 = [(1, "a"), (2, "b"), (3, "c"), (None, None)]
+        df1 = spark.createDataFrame(data1, ["num", "letter"])
+        data2 = [(1, 6), (2, 7), (3, 8), (None, None)]
+        df2 = spark.createDataFrame(data2, ["num", "num2"])
+        with pytest.raises(SchemasNotEqualError):
+            assert_df_equality(df1, df2)
+
+
+def test_remove_non_word_characters_long_error(my_chispa, spark):
+    source_data = [("matt7",), ("bill&",), ("isabela*",), (None,)]
+    source_df = spark.createDataFrame(source_data, ["name"])
+    actual_df = source_df.withColumn("clean_name", remove_non_word_characters(F.col("name")))
+    expected_data = [
+        ("matt7", "matt"),
+        ("bill&", "bill"),
+        ("isabela*", "isabela"),
+        (None, None),
+    ]
+    expected_df = spark.createDataFrame(expected_data, ["name", "clean_name"])
+    # my_chispa.assert_df_equality(actual_df, expected_df)
+    with pytest.raises(DataFramesNotEqualError):
+        assert_df_equality(actual_df, expected_df)
