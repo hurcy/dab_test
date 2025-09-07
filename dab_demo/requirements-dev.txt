@@ -8,6 +8,8 @@ databricks-dlt
 
 ## pytest is the default package used for testing
 pytest
+pytest-spark
+chispa
 
 ## Dependencies for building wheel files
 setuptools
@@ -26,4 +28,4 @@ wheel
 ## version of db-connect that corresponds to the Databricks Runtime version used
 ## for this project.
 #
-# databricks-connect>=15.4,<15.5
+databricks-connect==16.4.*

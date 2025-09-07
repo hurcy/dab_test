@@ -96,6 +96,29 @@ Authenticate to your Databricks workspace:
 databricks configure
 ```
 
+To enable serverless compute in your IDE, use the DEFAULT configuration profile, which is selected by the DatabricksSession.builder when no parameters are specified:
+
+1. Create a configuration profile named DEFAULT using the instructions from step 1.
+2. Use a text editor to open the .databrickscfg file, which is found in:
+  - Your $HOME user home folder on Unix, Linux, or macOS: ~/.databrickscfg, or
+  - Your %USERPROFILE% (your user home) folder on Windows. For example, for macOS:
+
+```
+nano ~/.databrickscfg
+```
+
+3. Add serverless_compute_id = auto to the DEFAULT profile:
+
+```
+[DEFAULT]
+host                  = https://my-workspace.cloud.databricks.com
+auth_type             = databricks-cli
+serverless_compute_id = auto
+```
+
+4. Save the changes and exit your editor.
+
+
 ### 2. **Local Development**
 
 Clone and set up the project:
