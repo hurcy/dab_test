@@ -12,7 +12,10 @@ dab_demo/
 │   ├── foo/                     # Example module package
 │   │   ├── __init__.py          # Package initialization
 │   │   └── bar.py               # YAML config reader utility
+│   ├── helpers/                 # PySpark utility functions
+│   │   └── columns_helpers.py   # DataFrame column operations
 │   ├── path_manager.py          # Path management utility (Singleton)
+│   ├── session_manager.py       # Spark session management
 │   ├── demo.ipynb               # Demonstration notebook
 │   └── set_notebook_paths.ipynb # Path configuration helper
 ├── resources/                   # Resource files
@@ -20,7 +23,12 @@ dab_demo/
 ├── tests/                       # Test suite
 │   ├── foo/                     # Module tests
 │   │   └── test_read_resource.py # Resource reading tests
+│   ├── helpers/                 # Helper function tests
+│   │   └── test_columns_helpers.py # Column operations tests
+│   ├── conftest.py              # Pytest fixtures and configuration
+│   ├── test_chispa_examples.py  # Advanced DataFrame testing examples
 │   ├── test_path_manager.py     # Path manager tests
+│   ├── test_session_manager.py  # Session manager tests
 │   └── pytest_runner.ipynb     # Databricks pytest runner
 ├── scratch/                     # Development workspace
 │   ├── exploration.ipynb        # Data exploration notebook
@@ -67,13 +75,43 @@ config_data = parse_bar()
 print(config_data)  # {'bar_test': {'foo_test': 'zoo'}}
 ```
 
-### 4. **Comprehensive Testing Framework**
+### 4. **PySpark Helper Functions**
+- **Column Operations**: Advanced DataFrame column manipulation and filtering
+- **Session Management**: Optimized Spark session with logging control
+- **Testing Utilities**: Professional DataFrame testing with chispa integration
+
+```python
+from helpers.columns_helpers import columns_except, dataframe_except_columns
+from session_manager import get_spark
+
+# Get optimized Spark session
+spark = get_spark()
+
+# Create sample DataFrame
+df = spark.createDataFrame([(1, 2, 3, 4)], ["col1", "col2", "col3", "col4"])
+
+# Get columns except specified ones
+remaining_cols = columns_except(df, ["col2", "col4"])
+print(remaining_cols)  # ["col1", "col3"]
+
+# Create DataFrame without specified columns
+filtered_df = dataframe_except_columns(df, ["col2", "col4"])
+filtered_df.show()  # Shows only col1 and col3
+```
+
+### 5. **Comprehensive Testing Framework**
 - **pytest Integration**: Full pytest support with custom configuration
 - **Databricks-Native Testing**: `pytest_runner.ipynb` for running tests in Databricks
 - **Path Manager Tests**: Validates path resolution across environments
 - **Resource Tests**: Ensures configuration files are accessible and valid
 
-### 5. **Monorepo Support**
+### 6. **PySpark Utilities and Testing**
+- **Column Helpers**: Advanced DataFrame column manipulation functions
+- **Session Management**: Optimized Spark session configuration with logging control
+- **Chispa Integration**: Professional DataFrame testing with detailed comparisons
+- **Custom Fixtures**: Reusable pytest fixtures for Spark testing
+
+### 7. **Monorepo Support**
 - **Multi-Project Structure**: Supports both `dab_demo` and `common_framework` projects
 - **Shared Dependencies**: Seamless integration between related projects
 - **Synchronized Deployment**: Bundle configuration includes both projects
@@ -201,6 +239,21 @@ Use the provided `pytest_runner.ipynb` notebook:
   - Tests error handling for missing files
   - Ensures proper integration with PathResolver
 
+- **Helper Function Tests** (`test_columns_helpers.py`):
+  - Tests DataFrame column manipulation functions
+  - Validates column filtering and selection operations
+  - Ensures proper DataFrame transformations
+
+- **Session Manager Tests** (`test_session_manager.py`):
+  - Tests Spark session creation and configuration
+  - Validates logging and warning suppression
+  - Ensures compatibility across environments
+
+- **Advanced DataFrame Tests** (`test_chispa_examples.py`):
+  - Comprehensive DataFrame comparison testing
+  - Schema validation and data type checking
+  - Advanced testing patterns with chispa library
+
 ### **Test Configuration**
 The `pytest.ini` file configures:
 ```ini
@@ -268,13 +321,18 @@ targets:
 
 ### **Project Dependencies**
 - **Core**: `setuptools`, `wheel`
-- **Testing**: `pytest`, `databricks-dlt`
+- **Testing**: `pytest`, `chispa`, `databricks-dlt`
+- **PySpark**: `pyspark` (for local development)
 - **Development**: `databricks-connect` (optional)
 - **Configuration**: `PyYAML` (included in Databricks Runtime)
+- **Data Testing**: `chispa` for DataFrame comparisons
 
 ### **Common Issues & Solutions**
 - **Import Errors**: Use `set_notebook_paths.ipynb` for proper path configuration
 - **Bundle Path Issues**: Prefer original source paths over `.bundle` paths
 - **File Encoding**: Handle encoding issues with explicit UTF-8 specification
 - **Permission Errors**: Ensure proper workspace permissions for Bundle deployment
+- **Spark Session Issues**: Use `session_manager.py` for consistent session configuration
+- **DataFrame Testing**: Use chispa library for robust DataFrame comparisons
+- **PySpark Warnings**: Configure logging levels in session manager to reduce noise
 

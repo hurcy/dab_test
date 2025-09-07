@@ -12,17 +12,26 @@ dab_test/
 │   │   └── data.json          # JSON data
 │   ├── src/zoo/               # Utility modules
 │   ├── tests/                 # Framework tests
-│   ├── dlt_pipeline.ipynb     # Delta Live Tables pipeline
+│   ├── pytest.ini            # Pytest configuration
 │   └── README.md              # Framework documentation
 ├── dab_demo/                  # Main DAB demonstration project
 │   ├── src/                   # Application source code
 │   │   ├── foo/               # Example modules
+│   │   ├── helpers/           # PySpark utility functions
 │   │   ├── path_manager.py    # Path management utility
+│   │   ├── session_manager.py # Spark session management
 │   │   └── *.ipynb           # Demonstration notebooks
 │   ├── tests/                 # Application tests
+│   │   ├── helpers/           # Helper function tests
+│   │   ├── conftest.py        # Pytest configuration
+│   │   └── test_*.py         # Test modules
 │   ├── resources/             # DAB resources
+│   ├── scratch/               # Development workspace
+│   ├── fixtures/              # Test fixtures
 │   ├── databricks.yml        # DAB configuration
+│   ├── requirements-dev.txt   # Development dependencies
 │   └── README.md              # Project documentation
+├── LICENSE                    # Project license
 ├── .gitignore                 # Git ignore rules
 └── README.md                  # This file
 ```
@@ -39,8 +48,10 @@ A shared library providing:
 ### **DAB Demo**
 A production-ready Databricks Asset Bundle showcasing:
 - **Path Management**: Singleton-based path resolution across environments
+- **Session Management**: Optimized Spark session configuration with logging control
+- **PySpark Utilities**: Helper functions for DataFrame operations and column manipulation
+- **Testing Framework**: Comprehensive testing with chispa integration and pytest fixtures
 - **Smart Configuration**: Environment-aware setup for notebooks and modules
-- **Testing Strategies**: Both local and Databricks-native testing approaches
 - **CI/CD Patterns**: Multi-environment deployment with Bundle configuration
 
 ## 🎯 Key Features
@@ -57,6 +68,9 @@ A production-ready Databricks Asset Bundle showcasing:
 
 ### **Testing Excellence**
 - **Comprehensive Coverage**: Unit tests for all modules and configurations
+- **PySpark Testing**: Advanced DataFrame testing with chispa library
+- **Pytest Integration**: Custom fixtures and configuration for Spark testing
+- **Helper Function Testing**: Validation of column operations and DataFrame utilities
 - **Databricks Integration**: Native testing within Databricks notebooks
 - **CI/CD Ready**: Automated testing in deployment pipelines
 
