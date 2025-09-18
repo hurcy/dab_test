@@ -30,7 +30,7 @@ def remove_non_word_characters(col):
 def describe_column_equality():
     def test_removes_non_word_characters_short(spark):
         data = [
-            ("jo&&se", "jose"),
+            ("jo&&se", "jose2"),
             ("**li**", "li"),
             ("#::luisa", "luisa"),
             (None, None),

@@ -9,6 +9,7 @@ sync:
   paths:
     - ../common_framework
     - ./src
+    - ./tests
 
 # 리소스 정의할 디렉토리 깊이에 따라 변경 필요함
 include:
